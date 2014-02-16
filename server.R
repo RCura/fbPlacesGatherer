@@ -16,12 +16,13 @@ shinyServer(function(input, output) {
   })
   
   getFBData <- reactive({
+    fbToken <- "288831644599402|11c28468d6499cbb58ff8493c9f77cdc"
     #baseQuery <- "https://graph.facebook.com/search?q=places&type=place&center=48.813333,2.344444&distance=50000&limit=100&fields=id,name,checkins,likes,location,category,category_list&access_token=CAACEdEose0cBADIV3jMw7y2u0A7nShSP7ECD6ZAhZB39JVo6xA1bp5rRyJhtFY3KPv1yNjbKiJDzNws5FfNFEIZAdiuYZBBDSIZAAanPSh6MWQFuoTpNO5r64EoZBVGQKfNFodP8r27Gcco5kbAtdbZAqHjzW55RPCrnZAnJErq5KOoyD8DhgIuOuZAy6goxrUXMZD" 
-    baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, input$fbToken)
-    print(baseQuery)
+    #baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, input$fbToken)
+    baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, fbToken)
+
     rawData <- try(jsonlite::fromJSON(baseQuery))
     if (class(rawData) == "try-error") {return()}
-    print(str(rawData))
     fbData <- fbJSONtoDF(rawData$data)
     row.names(fbData) <- fbData$id
     rawData <- jsonlite::fromJSON(rawData$paging$`next`)
@@ -35,13 +36,10 @@ shinyServer(function(input, output) {
     fbData <- as.data.frame(apply(X=fbData, MARGIN=c(1:2), FUN=function(x){return(gsub(pattern="\023", replacement="-", x=x))}), stringsAsFactors=FALSE)
     fbData <- as.data.frame(apply(X=fbData, MARGIN=c(1:2), FUN=function(x){return(gsub(pattern="\031", replacement="'", x=x))}), stringsAsFactors=FALSE)
     fbData <- as.data.frame(apply(X=fbData, MARGIN=c(1:2), FUN=function(x){return(gsub(pattern="\"", replacement="", x=x))}), stringsAsFactors=FALSE)
-    #print(fbData)
     fbData$latitude <- as.numeric(fbData$latitude)
     fbData$longitude <- as.numeric(fbData$longitude)
     fbData$likes <- as.numeric(fbData$likes)
     fbData$checkins <- as.numeric(fbData$checkins)
-    #str(fbData)
-    print(str(fbData))
     return(fbData[fbData$category!="City",])
   })
   
@@ -73,9 +71,11 @@ shinyServer(function(input, output) {
   
   
   output$placesMap <- renderChart({
-    if (is.null(getGeoContent())){return(
-      Leaflet$new()
-    )}
+    if (is.null(getGeoContent())){
+      blankMap <- Leaflet$new()
+      blankMap$addParams(dom="placesMap")
+      return(blankMap)
+    }
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
     #print(geom@coords)
@@ -106,7 +106,7 @@ shinyServer(function(input, output) {
     df$checkinsCumules <- cumsum(na.exclude(df$checkins)) / sum(df$checkins, na.rm=TRUE) * 100
     
     plotDF <- melt(df, value.name="value", measure.vars=c("distanceCumulee", "likesCumules", "checkinsCumules"))
-    str(plotDF)
+    #str(plotDF)
     n1 <- nPlot(value ~ distance, data = plotDF, group="variable", type = "lineChart")
     n1$xAxis(axisLabel = 'Distance to geocoded point (m)')
     n1$yAxis(axisLabel = 'Cumulative frequency')
