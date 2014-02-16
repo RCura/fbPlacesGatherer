@@ -1,10 +1,3 @@
-
-# This is the server logic for a Shiny web application.
-# You can find out more about building applications with Shiny here:
-# 
-# http://www.rstudio.com/shiny/
-#
-
 library(shiny)
 library(jsonlite)
 library(sp)
@@ -73,22 +66,6 @@ shinyServer(function(input, output) {
   })
   
   
-  output$placesStats <- renderPlot({
-    df <- getGeoContent()@data
-    df <- df[order(df$distance),]
-    df <- df[,c("id", "distance","likes","checkins")]
-    df <- na.omit(df)
-    
-    distanceCumulee <- cumsum(rep(x=1, times=nrow(df))) / nrow(df) * 100
-    likesCumulee <- cumsum(na.exclude(df$likes)) / sum(df$likes, na.rm=TRUE) * 100
-    checkinsCumulee <- cumsum(na.exclude(df$checkins)) / sum(df$checkins, na.rm=TRUE) * 100
-
-    plot(x=df$distance, y=distanceCumulee, type="l", col="green")
-    lines(x=df$distance, y=checkinsCumulee, col="red")
-    lines(x=df$distance, y=likesCumulee, col="blue")
-    
-  })
-  
   output$placesMap <- renderChart({
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
@@ -108,13 +85,23 @@ shinyServer(function(input, output) {
     return(placesMap)
   })
   
-  output$heatMap <- renderChart({
-    centerCoords <- as.double(unlist(strsplit(geocodedCoords(), split=",")))
-    heatMap <- Leaflet$new()
-    heatMap$setView(centerCoords, 8)
-    heatMap$tileLayer(provider = "MapQuestOpen.OSM")
-    heatMap$addParams(dom="heatMap")
-    return(heatMap)
+  output$placesStats <- renderChart({
+    df <- getGeoContent()@data
+    df <- df[order(df$distance),]
+    df <- df[,c("id", "distance","likes","checkins")]
+    df <- na.omit(df)
+    
+    df$distanceCumulee <- cumsum(rep(x=1, times=nrow(df))) / nrow(df) * 100
+    df$likesCumules <- cumsum(na.exclude(df$likes)) / sum(df$likes, na.rm=TRUE) * 100
+    df$checkinsCumules <- cumsum(na.exclude(df$checkins)) / sum(df$checkins, na.rm=TRUE) * 100
+    
+    plotDF <- melt(df, value.name="value", measure.vars=c("distanceCumulee", "likesCumules", "checkinsCumules"))
+    str(plotDF)
+    n1 <- nPlot(value ~ distance, data = plotDF, group="variable", type = "lineChart")
+    n1$xAxis(axisLabel = 'Distance to geocoded point (m)')
+    n1$yAxis(axisLabel = 'Cumulative frequency')
+    n1$addParams(dom="placesStats")
+    return(n1)
   })
   
   output$downloadShp <- downloadHandler(
@@ -124,6 +111,7 @@ shinyServer(function(input, output) {
         file.remove(Sys.glob("fbCrawl.*"))
       }
       writeOGR(getGeoContent(), dsn="fbCrawl.shp", layer="fbCrawl", driver="ESRI Shapefile")
+      write.csv(as.data.frame(cbind(getGeoContent()@data, as.data.frame(getGeoContent()@coords))), "fbCrawl.csv")
       zip(zipfile='fbCrawlExport.zip', files=Sys.glob("fbCrawl.*"))
       file.copy("fbCrawlExport.zip", file)
       if (length(Sys.glob("fbCrawl.*"))>0){
