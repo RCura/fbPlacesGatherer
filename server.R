@@ -5,6 +5,7 @@ library(rgdal)
 library(rCharts)
 library(rMaps)
 library(ggmap)
+library(reshape)
 
 shinyServer(function(input, output) {
   
