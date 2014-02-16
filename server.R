@@ -19,7 +19,9 @@ shinyServer(function(input, output) {
     #baseQuery <- "https://graph.facebook.com/search?q=places&type=place&center=48.813333,2.344444&distance=50000&limit=100&fields=id,name,checkins,likes,location,category,category_list&access_token=CAACEdEose0cBADIV3jMw7y2u0A7nShSP7ECD6ZAhZB39JVo6xA1bp5rRyJhtFY3KPv1yNjbKiJDzNws5FfNFEIZAdiuYZBBDSIZAAanPSh6MWQFuoTpNO5r64EoZBVGQKfNFodP8r27Gcco5kbAtdbZAqHjzW55RPCrnZAnJErq5KOoyD8DhgIuOuZAy6goxrUXMZD" 
     baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, input$fbToken)
     print(baseQuery)
-    rawData <- jsonlite::fromJSON(baseQuery)
+    rawData <- try(jsonlite::fromJSON(baseQuery))
+    if (class(rawData) == "try-error") {return()}
+    print(str(rawData))
     fbData <- fbJSONtoDF(rawData$data)
     row.names(fbData) <- fbData$id
     rawData <- jsonlite::fromJSON(rawData$paging$`next`)
@@ -39,10 +41,12 @@ shinyServer(function(input, output) {
     fbData$likes <- as.numeric(fbData$likes)
     fbData$checkins <- as.numeric(fbData$checkins)
     #str(fbData)
+    print(str(fbData))
     return(fbData[fbData$category!="City",])
   })
   
   getGeoContent <- reactive({
+    if (is.null(getFBData())){return()}
     WGS84 <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
     L93 <- CRS("+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
         
@@ -63,11 +67,15 @@ shinyServer(function(input, output) {
   
    
   output$placesTable <- renderDataTable({
+    if(is.null(getFBData())){return()}
     getFBData()
   })
   
   
   output$placesMap <- renderChart({
+    if (is.null(getGeoContent())){return(
+      Leaflet$new()
+    )}
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
     #print(geom@coords)
@@ -87,6 +95,7 @@ shinyServer(function(input, output) {
   })
   
   output$placesStats <- renderChart({
+    if (is.null(getGeoContent())){return()}
     df <- getGeoContent()@data
     df <- df[order(df$distance),]
     df <- df[,c("id", "distance","likes","checkins")]
