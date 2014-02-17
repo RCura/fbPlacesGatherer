@@ -3,7 +3,6 @@ library(jsonlite)
 library(sp)
 library(rgdal)
 library(rCharts) # github dev branch
-library(rMaps) # github
 library(ggmap)
 library(reshape)
 
