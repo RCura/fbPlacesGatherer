@@ -2,17 +2,19 @@ library(shiny)
 library(jsonlite)
 library(sp)
 library(rgdal)
-library(rCharts)
-library(rMaps)
+library(rCharts) # github dev branch
+library(rMaps) # github
 library(ggmap)
 library(reshape)
 
 shinyServer(function(input, output) {
   
   geocodedCoords <- reactive({
+    if (input$runQuery > 0){
     place <- isolate(input$location)
     myPlace <- ggmap::geocode(place)
     return(paste(rev(myPlace), collapse=","))
+    }
   })
   
   getFBData <- reactive({
