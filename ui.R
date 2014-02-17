@@ -9,7 +9,7 @@ shinyUI(pageWithSidebar(
    textInput(inputId="location", label="Location", value="Mulhouse, France"),
    helpModal(title="Location", link="locationHelp", content="<p> Enter any location here, and it shall be geocoded. The more precise you are, the most efficient the geocoding is."),
    sliderInput(inputId="maxDistance", label="Max distance (m)", min=1000, max=20000, value=5000, step=1000),
-   submitButton(text='Get Data !')
+   actionButton(inputId="runQuery",label='Get Data !')
    
   ),
   
@@ -18,6 +18,7 @@ shinyUI(pageWithSidebar(
       tabPanel(title="Table",
                dataTableOutput(outputId="placesTable")),
       tabPanel("Plots",
+               plotOutput(outputId="placesStats2"),
                showOutput(outputId="placesMap", "leaflet"),
                tags$hr(),
                downloadButton('downloadShp', 'Download Shapefile (Lambert 93)'),

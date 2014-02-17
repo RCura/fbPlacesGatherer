@@ -10,16 +10,16 @@ library(reshape)
 shinyServer(function(input, output) {
   
   geocodedCoords <- reactive({
-    place <- input$location
+    place <- isolate(input$location)
     myPlace <- ggmap::geocode(place)
     return(paste(rev(myPlace), collapse=","))
   })
   
   getFBData <- reactive({
+    if (input$runQuery > 0){
+
     fbToken <- "288831644599402|11c28468d6499cbb58ff8493c9f77cdc"
-    #baseQuery <- "https://graph.facebook.com/search?q=places&type=place&center=48.813333,2.344444&distance=50000&limit=100&fields=id,name,checkins,likes,location,category,category_list&access_token=CAACEdEose0cBADIV3jMw7y2u0A7nShSP7ECD6ZAhZB39JVo6xA1bp5rRyJhtFY3KPv1yNjbKiJDzNws5FfNFEIZAdiuYZBBDSIZAAanPSh6MWQFuoTpNO5r64EoZBVGQKfNFodP8r27Gcco5kbAtdbZAqHjzW55RPCrnZAnJErq5KOoyD8DhgIuOuZAy6goxrUXMZD" 
-    #baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, input$fbToken)
-    baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), input$maxDistance, fbToken)
+    baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), isolate(input$maxDistance), fbToken)
 
     rawData <- try(jsonlite::fromJSON(baseQuery))
     if (class(rawData) == "try-error") {return()}
@@ -41,6 +41,9 @@ shinyServer(function(input, output) {
     fbData$likes <- as.numeric(fbData$likes)
     fbData$checkins <- as.numeric(fbData$checkins)
     return(fbData[fbData$category!="City",])
+    } else {
+      return()
+    }
   })
   
   getGeoContent <- reactive({
@@ -69,18 +72,30 @@ shinyServer(function(input, output) {
     getFBData()
   })
   
+  output$placesStats2 <- renderPlot({
+    df <- getGeoContent()@data
+    df <- df[order(df$distance),]
+    df <- df[,c("id", "distance","likes","checkins")]
+    df <- na.omit(df)
+    
+    distanceCumulee <- cumsum(rep(x=1, times=nrow(df))) / nrow(df) * 100
+    likesCumulee <- cumsum(na.exclude(df$likes)) / sum(df$likes, na.rm=TRUE) * 100
+    checkinsCumulee <- cumsum(na.exclude(df$checkins)) / sum(df$checkins, na.rm=TRUE) * 100
+    plot(x=df$distance, y=distanceCumulee, type="l", col="green")
+    lines(x=df$distance, y=checkinsCumulee, col="red")
+    lines(x=df$distance, y=likesCumulee, col="blue") 
+  })
+  
   
   output$placesMap <- renderChart({
     if (is.null(getGeoContent())){
-      blankMap <- Leaflet$new()
-      blankMap$addParams(dom="placesMap")
-      return(blankMap)
+    return()
     }
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
     #print(geom@coords)
     myDF <- as.data.frame(cbind(geom, as.data.frame(geom@coords)))
-    #str(myDF)
+    print(nrow(myDF))
     centerCoords <- as.double(unlist(strsplit(geocodedCoords(), split=",")))
     placesMap <- Leaflet$new()
     
