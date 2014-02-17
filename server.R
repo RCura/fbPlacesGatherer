@@ -88,7 +88,7 @@ shinyServer(function(input, output) {
   })
   
   
-  output$placesMap <- renderChart({
+  output$placesMap <- renderMap({
     if (is.null(getGeoContent())){
     return()
     }
@@ -104,7 +104,7 @@ shinyServer(function(input, output) {
       placesMap$marker(curCoords, bindPopup=sprintf('<p><a href="http://www.facebook.com/%s">%s</a></p>', myDF$id[i], myDF$name[i]))
     }
     placesMap$tileLayer(provider = "MapQuestOpen.OSM")
-    placesMap$addParams(dom = 'placesMap')
+    #placesMap$addParams(dom = 'placesMap')
     return(placesMap)
   })
   
