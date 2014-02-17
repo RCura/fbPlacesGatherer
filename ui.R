@@ -6,7 +6,7 @@ shinyUI(pageWithSidebar(
   headerPanel("fb Places Gatherer"),
   
   sidebarPanel(
-   textInput(inputId="location", label="Location", value="Mulhouse, France"),
+   textInput(inputId="location", label="Location", value="Vallauris, France"),
    helpModal(title="Location", link="locationHelp", content="<p> Enter any location here, and it shall be geocoded. The more precise you are, the most efficient the geocoding is."),
    sliderInput(inputId="maxDistance", label="Max distance (m)", min=1000, max=20000, value=5000, step=1000),
    actionButton(inputId="runQuery",label='Get Data !')

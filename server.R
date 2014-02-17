@@ -1,5 +1,6 @@
 library(shiny)
-library(jsonlite)
+library(jsonlite) # install.packages("jsonlite", repos="http://cran.r-project.org")
+# NOTE : Only this version of jsonlite works, not the rstudio-cran or github one :/
 library(sp)
 library(rgdal)
 library(rCharts) # github dev branch
@@ -21,7 +22,6 @@ shinyServer(function(input, output) {
 
     fbToken <- "288831644599402|11c28468d6499cbb58ff8493c9f77cdc"
     baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), isolate(input$maxDistance), fbToken)
-
     rawData <- try(jsonlite::fromJSON(baseQuery))
     if (class(rawData) == "try-error") {return()}
     fbData <- fbJSONtoDF(rawData$data)
@@ -94,9 +94,7 @@ shinyServer(function(input, output) {
     }
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
-    #print(geom@coords)
     myDF <- as.data.frame(cbind(geom, as.data.frame(geom@coords)))
-    print(nrow(myDF))
     centerCoords <- as.double(unlist(strsplit(geocodedCoords(), split=",")))
     placesMap <- Leaflet$new()
     
