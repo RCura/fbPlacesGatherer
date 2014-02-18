@@ -15,15 +15,14 @@ shinyUI(pageWithSidebar(
   
   mainPanel(
     tabsetPanel(
-      tabPanel(title="Table",
-               dataTableOutput(outputId="placesTable")),
       tabPanel("Plots",
-               showOutput(outputId="placesMap", "leaflet"),
+               mapOutput(outputId="placesMap"),
                tags$hr(),
                downloadButton('downloadShp', 'Download Shapefile (Lambert 93)'),
-               showOutput(outputId="placesStats", "nvd3"),
-               plotOutput(outputId="placesStats2")
+               showOutput(outputId="placesStats", "nvd3")
                ),
+      tabPanel(title="Table",
+               dataTableOutput(outputId="placesTable")),
       tabPanel(title="About", includeMarkdown("README.md"))
     )
   )

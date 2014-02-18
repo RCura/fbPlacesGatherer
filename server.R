@@ -73,24 +73,9 @@ shinyServer(function(input, output) {
     getFBData()
   })
   
-  output$placesStats2 <- renderPlot({
-    df <- getGeoContent()@data
-    df <- df[order(df$distance),]
-    df <- df[,c("id", "distance","likes","checkins")]
-    df <- na.omit(df)
-    
-    distanceCumulee <- cumsum(rep(x=1, times=nrow(df))) / nrow(df) * 100
-    likesCumulee <- cumsum(na.exclude(df$likes)) / sum(df$likes, na.rm=TRUE) * 100
-    checkinsCumulee <- cumsum(na.exclude(df$checkins)) / sum(df$checkins, na.rm=TRUE) * 100
-    plot(x=df$distance, y=distanceCumulee, type="l", col="green")
-    lines(x=df$distance, y=checkinsCumulee, col="red")
-    lines(x=df$distance, y=likesCumulee, col="blue") 
-  })
-  
-  
   output$placesMap <- renderMap({
     if (is.null(getGeoContent())){
-    return()
+    return(rCharts::Leaflet$new())
     }
     geom <- getGeoContent()
     geom <- spTransform(x=geom, CRSobj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
@@ -109,7 +94,7 @@ shinyServer(function(input, output) {
   })
   
   output$placesStats <- renderChart({
-    if (is.null(getGeoContent())){return()}
+    if (is.null(getGeoContent())){return(rCharts::nvd3Plot$new())}
     df <- getGeoContent()@data
     df <- df[order(df$distance),]
     df <- df[,c("id", "distance","likes","checkins")]
