@@ -70,7 +70,9 @@ shinyServer(function(input, output) {
    
   output$placesTable <- renderDataTable({
     if(is.null(getFBData())){return()}
-    getFBData()
+    myDF <- getFBData()
+    myDF$name <- sprintf('<a href="http://www.facebook.com/%s" target="_blank">%s</a>', myDF$id, myDF$name)
+    return(myDF)
   })
   
   output$placesMap <- renderMap({
@@ -82,14 +84,20 @@ shinyServer(function(input, output) {
     myDF <- as.data.frame(cbind(geom, as.data.frame(geom@coords)))
     centerCoords <- as.double(unlist(strsplit(geocodedCoords(), split=",")))
     placesMap <- Leaflet$new()
-    
-    placesMap$setView(centerCoords, zoom = 12)
+    userDist <- isolate(input$maxDistance)
+    if (userDist <= 5000){
+      zoomLvl <- 12
+    } else if (userDist <= 15000) {
+      zoomLvl <- 11
+    } else {
+      zoomLvl <- 10
+    }
+    placesMap$setView(centerCoords, zoom = zoomLvl)
     for (i in 1:nrow(myDF)){
       curCoords <- c(myDF$latitude[i], myDF$longitude[i])
-      placesMap$marker(curCoords, bindPopup=sprintf('<p><a href="http://www.facebook.com/%s">%s</a></p>', myDF$id[i], myDF$name[i]))
+      placesMap$marker(curCoords, bindPopup=sprintf('<p><a href="http://www.facebook.com/%s" target="_blank">%s</a></p>', myDF$id[i], myDF$name[i]))
     }
     placesMap$tileLayer(provider = "MapQuestOpen.OSM")
-    #placesMap$addParams(dom = 'placesMap')
     return(placesMap)
   })
   
