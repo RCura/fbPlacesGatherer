@@ -22,7 +22,9 @@ shinyServer(function(input, output) {
 
     fbToken <- "288831644599402|11c28468d6499cbb58ff8493c9f77cdc"
     baseQuery <- sprintf("https://graph.facebook.com/search?type=place&limit=10000&fields=id,name,checkins,likes,location,category,category_list&center=%s&distance=%s&access_token=%s", geocodedCoords(), isolate(input$maxDistance), fbToken)
+    #print(baseQuery)
     rawData <- try(jsonlite::fromJSON(baseQuery))
+    #print(rawData)
     if (class(rawData) == "try-error") {return()}
     fbData <- fbJSONtoDF(rawData$data)
     row.names(fbData) <- fbData$id
