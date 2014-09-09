@@ -3,7 +3,7 @@ library(shiny)
 shinyUI(pageWithSidebar(
   
   # Application title
-  headerPanel("fb Places Gatherer"),
+  headerPanel("fb Places Gatherer", tags$head(includeScript("analytics.js"))),
   
   sidebarPanel(
    textInput(inputId="location", label="Location", value="Vallauris, France"),
