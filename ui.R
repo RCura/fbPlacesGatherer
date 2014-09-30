@@ -16,10 +16,10 @@ shinyUI(pageWithSidebar(
   mainPanel(
     tabsetPanel(
       tabPanel("Plots",
-               mapOutput(outputId="placesMap"),
+               chartOutput(outputId="placesMap", lib = 'leaflet'),
                tags$hr(),
                downloadButton('downloadShp', 'Download Shapefile (Lambert 93)'),
-               showOutput(outputId="placesStats", "nvd3")
+               showOutput(outputId="placesStats", lib = "nvd3", )
                ),
       tabPanel(title="Table",
                dataTableOutput(outputId="placesTable")),
