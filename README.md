@@ -1,8 +1,4 @@
----
-output:
-  html_document:
-    theme: cerulean
----
+
 fbPlacesGatherer
 ===============
 
